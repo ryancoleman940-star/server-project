@@ -1,5 +1,5 @@
 /**
- * RevMED Session Replay — Recording Snippet v4
+ * ******* Session Replay — Recording Snippet v4
  * Uses rrweb v1.1.3 stable
  * FIX: Removed keepalive:true from fetch (64KB browser limit was killing the ~400KB full snapshot)
  */
@@ -8,7 +8,7 @@
 
   var ENDPOINT = (document.currentScript && document.currentScript.src)
     ? new URL(document.currentScript.src).origin + '/api/record'
-    : 'https://replay.revmedsups.com/api/record';
+    : 'https://replay.*******.com/api/record';
 
   var FLUSH_INTERVAL = 5000;
   var MAX_BATCH_SIZE = 500;
