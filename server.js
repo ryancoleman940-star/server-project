@@ -646,7 +646,7 @@ app.post('/api/settings', (req, res) => {
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 app.listen(PORT, () => {
-  console.log(`\n  🎬 RevMED Replay Dashboard`);
+  console.log(`\n  🎬 ******* Replay Dashboard`);
   console.log(`  ─────────────────────────`);
   console.log(`  Dashboard:  http://localhost:${PORT}`);
   console.log(`  Snippet:    http://localhost:${PORT}/snippet.js`);
