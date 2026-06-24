@@ -1,7 +1,7 @@
 {
-  "name": "revmed-replay",
+  "name": "*******-replay",
   "version": "1.0.0",
-  "description": "Session replay dashboard for RevMED",
+  "description": "Session replay dashboard for *******",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
