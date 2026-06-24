@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session Replays — RevMED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/rrweb@1.1.3/dist/rrweb.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0b0f19;--surface:#131a2b;--surface2:#1a2338;--border:#1f2b42;--text:#e2e8f0;--text2:#7a8ba8;--accent:#00A7E1;--accent2:#0084b4;--green:#16a34a;--red:#dc2626;--amber:#d97706;--radius:12px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.app{display:flex;min-height:100vh}
+.sidebar{width:260px;background:#0a2540;border-right:1px solid #1f2b42;padding:24px 0;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.main{flex:1;margin-left:260px;padding:32px 40px}
+.sidebar-logo{padding:0 24px 28px;display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;letter-spacing:-.02em;border-bottom:1px solid rgba(255,255,255,.2);color:#fff}
+.sidebar-logo svg{width:28px;height:28px;color:#fff}
+.sidebar-nav{padding:16px 12px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,.15);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.25);color:#fff}
+.nav-item svg{width:18px;height:18px;flex-shrink:0}
+.sidebar-footer{padding:16px 24px;border-top:1px solid rgba(255,255,255,.2);font-size:11px;color:rgba(255,255,255,.6)}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:32px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.stat-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(0,167,225,.1)}
+.stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:8px}
+.stat-value{font-size:28px;font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:4px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.section-title{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;width:280px}
+.search-box input{background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;width:100%;outline:none}
+.search-box input::placeholder{color:var(--text2)}
+.search-box svg{width:16px;height:16px;color:var(--text2);flex-shrink:0}
+.sessions-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.sessions-table th{padding:12px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);text-align:left;background:var(--surface2);border-bottom:1px solid var(--border)}
+.sessions-table td{padding:14px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+.sessions-table tr:last-child td{border-bottom:none}
+.sessions-table tbody tr{cursor:pointer;transition:background .15s}
+.sessions-table tbody tr:hover{background:var(--surface2)}
+.device-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(0,167,225,.08);color:var(--accent)}
+.device-badge.mobile{background:rgba(168,85,247,.1);color:#a855f7}
+.device-badge.tablet{background:rgba(245,158,11,.1);color:var(--amber)}
+.source-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.02em}
+.source-badge.paid{background:rgba(239,68,68,.12);color:var(--red)}
+.source-badge.organic{background:rgba(34,197,94,.1);color:var(--green)}
+.source-badge.social{background:rgba(168,85,247,.1);color:#a855f7}
+.source-badge.direct{background:rgba(148,163,184,.1);color:var(--text2)}
+.source-badge.referral{background:rgba(245,158,11,.1);color:var(--amber)}
+.source-badge.campaign{background:rgba(59,130,246,.1);color:var(--accent)}
+.loc-text{font-size:11px;color:var(--text2)}
+.ip-text{font-size:10px;color:var(--text2);opacity:.6}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.status-dot.active{background:var(--green);box-shadow:0 0 6px var(--green)}
+.status-dot.ended{background:var(--text2)}
+.play-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;box-shadow:0 2px 4px rgba(0,167,225,.2)}
+.play-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+.del-btn{background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 8px;cursor:pointer;transition:all .2s;font-size:11px}
+.del-btn:hover{border-color:var(--red);color:var(--red)}
+.empty-state{text-align:center;padding:80px 20px;color:var(--text2)}
+.empty-state svg{width:64px;height:64px;margin-bottom:16px;opacity:.3}
+.empty-state h3{font-size:16px;color:var(--text);margin-bottom:8px}
+.empty-state p{font-size:13px;max-width:400px;margin:0 auto}
+.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px}
+.page-btn{padding:6px 12px;border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit}
+.page-btn:hover{border-color:var(--accent);color:var(--accent)}
+.page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* Player Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.active{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:98vw;height:96vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 32px 64px rgba(0,0,0,.4)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0}
+.modal-head h3{font-size:14px;font-weight:700}
+.modal-meta{display:flex;gap:12px;font-size:11px;color:var(--text2);flex-wrap:wrap}
+.modal-meta span{display:flex;align-items:center;gap:4px}
+.modal-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;background:rgba(255,255,255,.06);color:var(--text2);border-radius:8px;cursor:pointer;font-size:16px;transition:all .2s}
+.modal-close:hover{background:rgba(220,38,38,.15);color:var(--red)}
+.modal-body{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#0d1220;position:relative}
+.player-viewport{position:relative;overflow:hidden}
+/* Custom Player Controls */
+.player-controls{display:flex;align-items:center;gap:12px;padding:8px 20px;background:var(--surface2);border-top:1px solid var(--border);flex-shrink:0}
+.ctrl-btn{width:36px;height:36px;border:none;background:var(--accent);color:#fff;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:14px}
+.ctrl-btn:hover{background:var(--accent2);transform:scale(1.05)}
+.ctrl-btn.paused{background:var(--green)}
+.timeline{flex:1;height:6px;background:var(--border);border-radius:3px;cursor:pointer;position:relative;overflow:hidden}
+.timeline-fill{height:100%;background:linear-gradient(90deg,var(--accent),#0084b4);border-radius:3px;transition:width .3s ease;width:0}
+.time-display{font-size:12px;font-weight:600;color:var(--text2);min-width:100px;text-align:right;font-variant-numeric:tabular-nums}
+.speed-select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.speed-select:hover{border-color:var(--accent)}
+/* Activity Log */
+.modal-content-row{display:flex;flex:1;overflow:hidden;min-height:0}
+.activity-panel{width:260px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.activity-header{padding:12px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);border-bottom:1px solid var(--border);background:var(--surface2)}
+.activity-list{flex:1;overflow-y:auto;padding:8px 0}
+.activity-item{display:flex;gap:10px;padding:8px 16px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
+.activity-item:hover{background:var(--surface2)}
+.activity-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.activity-icon.cart{background:rgba(34,197,94,.12);color:var(--green)}
+.activity-icon.order{background:rgba(59,130,246,.12);color:var(--accent)}
+.activity-icon.view{background:rgba(148,163,184,.1);color:var(--text2)}
+.activity-icon.checkout{background:rgba(245,158,11,.12);color:var(--amber)}
+.activity-icon.upsell{background:rgba(168,85,247,.12);color:#a855f7}
+.activity-icon.meta{background:rgba(59,130,246,.12);color:#1877F2}
+.activity-icon.google{background:rgba(234,67,53,.12);color:#EA4335}
+.activity-icon.tiktok{background:rgba(255,255,255,.08);color:#fff}
+.activity-icon.snap{background:rgba(255,252,0,.12);color:#FFFC00}
+.activity-icon.pinterest{background:rgba(230,0,35,.12);color:#E60023}
+.activity-info{flex:1;min-width:0}
+.activity-action{font-weight:600;color:var(--text);margin-bottom:2px}
+.activity-detail{color:var(--text2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.activity-time{font-size:10px;color:var(--text2);font-variant-numeric:tabular-nums;flex-shrink:0}
+.activity-empty{padding:24px 16px;text-align:center;color:var(--text2);font-size:12px}
+/* Replayer iframe styling — override rrweb defaults */
+.player-viewport .replayer-wrapper iframe{border:none;background:#fff}
+.player-viewport .rr-player{position:relative !important}
+/* Snippet View */
+.snippet-view{padding:32px 40px}
+.snippet-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:24px}
+.snippet-card h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.snippet-card p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.code-block{background:#1a202c;border:1px solid #2d3748;border-radius:8px;padding:16px 20px;font-family:'SF Mono',Consolas,monospace;font-size:13px;color:var(--green);overflow-x:auto;position:relative;line-height:1.7}
+.copy-btn{position:absolute;top:8px;right:8px;padding:5px 12px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+@media(max-width:1200px){.activity-panel{width:220px}}
+@media(max-width:1024px){.sidebar{display:none}.main{margin-left:0;padding:16px}.stats{grid-template-columns:repeat(2,1fr)}.activity-panel{display:none}.modal-overlay{padding:0}.modal{max-width:100vw;max-height:100vh;height:100vh;border-radius:0;border:none}.modal-head{padding:8px 12px}.modal-meta{gap:6px;font-size:10px}.player-controls{padding:6px 12px;gap:8px}.modal-content-row{min-height:0}}
+@media(max-width:600px){.stats{grid-template-columns:1fr}.main{padding:12px}.sessions-table{font-size:11px}.sessions-table th,.sessions-table td{padding:8px 10px}}
+.action-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.action-click{background:rgba(59,130,246,.15);color:#60a5fa}
+.action-page{background:rgba(139,92,246,.15);color:#a78bfa}
+.action-cart{background:rgba(245,158,11,.15);color:#fbbf24}
+.action-checkout{background:rgba(236,72,153,.15);color:#f472b6}
+.action-purchase{background:rgba(34,197,94,.15);color:#4ade80}
+.action-scroll{background:rgba(100,116,139,.15);color:#94a3b8}
+.action-pixel{background:rgba(6,182,212,.15);color:#22d3ee}
+.action-other{background:rgba(255,255,255,.08);color:#94a3b8}
+.visitor-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all .2s}
+.visitor-card:hover{border-color:var(--accent);background:rgba(0,180,216,.04)}
+.visitor-card.selected{border-color:var(--accent);background:rgba(0,180,216,.08);box-shadow:0 0 0 1px var(--accent)}
+.visitor-timeline{position:relative;padding-left:20px}
+.timeline-item{position:relative;padding-bottom:20px;padding-left:16px;border-left:2px solid var(--border)}
+.timeline-item:last-child{border-left-color:transparent;padding-bottom:0}
+.timeline-dot{position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.timeline-content{padding:2px 0}
+@media(max-width:768px){#visitorsList{width:100%!important}#visitorDetail{display:none}.visitor-card.selected~#visitorDetail{display:block}}
+.conv-badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap}
+.conv-badge.cart{background:rgba(245,158,11,.15);color:#f59e0b}
+.conv-badge.order{background:rgba(34,197,94,.15);color:#22c55e}
+.conv-badge.amount{background:rgba(59,130,246,.15);color:#60a5fa;font-family:'SF Mono',Consolas,monospace}
+.conv-badge.none{color:#555;font-size:12px}
+.snooper-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;background:rgba(239,68,68,.15);color:#ef4444;letter-spacing:.02em}
+#globeContainer{width:100%;height:420px;border-radius:var(--radius);background:radial-gradient(ellipse at center,#0a1628 0%,#060d1a 100%);border:1px solid var(--border);overflow:hidden;position:relative;margin-bottom:24px}
+.heatmap-scroll{border:1px solid var(--border);border-radius:var(--radius);overflow-y:auto;overflow-x:hidden;margin-bottom:24px;background:#fff;max-height:75vh;position:relative}
+.heatmap-inner{position:relative;width:100%}
+.heatmap-iframe{width:100%;border:none;display:block}
+.heatmap-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.heatmap-band{position:absolute;left:0;width:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:12px;box-sizing:border-box}
+.heatmap-band-label{background:rgba(0,0,0,.75);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap;font-family:'SF Mono',Consolas,monospace;pointer-events:auto}
+.heatmap-ruler{position:sticky;top:0;left:0;width:44px;height:0;z-index:5;pointer-events:none}
+.heatmap-ruler-float{position:absolute;top:0;left:0;width:44px;background:rgba(10,20,40,.85);border-radius:0 0 8px 0;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;backdrop-filter:blur(4px)}
+.heatmap-ruler-item{font-size:9px;color:#fff;font-weight:700;font-family:'SF Mono',Consolas,monospace;opacity:.7}
+.heatmap-ruler-item.active{opacity:1;color:#00e5a0;font-size:11px}
+.ret-view-toggle{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:12px}
+.ret-view-toggle button{background:none;border:none;padding:5px 14px;color:var(--text2);cursor:pointer;font-family:inherit;font-size:12px;transition:all .15s}
+.ret-view-toggle button.active{background:var(--accent);color:#fff}
+#globeContainer canvas{cursor:grab}
+#globeContainer canvas:active{cursor:grabbing}
+.globe-legend{position:absolute;bottom:12px;left:16px;z-index:2;display:flex;gap:14px;font-size:11px;color:#8892a4}
+.globe-legend span{display:flex;align-items:center;gap:5px}
+.globe-dot-active{width:8px;height:8px;border-radius:50%;background:#00e5a0;box-shadow:0 0 6px #00e5a0;animation:gpulse 2s infinite}
+.globe-dot-total{width:8px;height:8px;border-radius:50%;background:#00b4d8}
+@keyframes gpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.filter-btns{display:flex;gap:4px}
+.filter-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-weight:500;transition:all .15s}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+.filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.filter-btn.live-btn.active{background:#22c55e;border-color:#22c55e}
+.filter-btn.cart-btn.active{background:#f59e0b;border-color:#f59e0b}
+.filter-btn.order-btn.active{background:#8b5cf6;border-color:#8b5cf6}
+.filter-btn.snooper-btn.active{background:#ef4444;border-color:#ef4444}
+.page-filter{padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;cursor:pointer;outline:none;max-width:200px}
+.page-filter option{background:var(--bg);color:var(--text)}
+.page-filter:focus{border-color:var(--accent)}
+.ret-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.ret-stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center}
+.ret-stat .val{font-size:28px;font-weight:800;color:var(--accent)}
+.ret-stat .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-top:4px}
+.ret-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px}
+.ret-bar-label{width:40px;text-align:right;color:var(--text2);flex-shrink:0;font-variant-numeric:tabular-nums}
+.ret-bar-wrap{flex:1;height:28px;background:rgba(255,255,255,.04);border-radius:6px;overflow:hidden;position:relative}
+.ret-bar-fill{height:100%;border-radius:6px;transition:width .5s ease;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:600;color:#fff;min-width:0}
+.ret-bar-count{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text2)}
+.dropoff-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:14px}
+.dropoff-badge{width:44px;height:44px;border-radius:10px;background:rgba(239,68,68,.12);color:#ef4444;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.sales-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.sales-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;text-align:center}
+.sales-card .val{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.sales-card .val.green{color:#22c55e}
+.sales-card .val.cyan{color:var(--accent)}
+.sales-card .val.purple{color:#8b5cf6}
+.sales-card .val.amber{color:#f59e0b}
+.sales-card .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-top:3px}
+.sales-chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;position:relative;height:220px}
+.sales-feed{display:grid;gap:8px;margin-bottom:24px}
+.sale-item{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px}
+.sale-amount{font-size:18px;font-weight:800;color:#22c55e;min-width:80px}
+.sale-info{flex:1;font-size:12px;color:var(--text2);line-height:1.5}
+.sale-info strong{color:var(--text);font-weight:600}
+.ord-table{width:100%;border-collapse:collapse;font-size:13px}
+.ord-table th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);border-bottom:1px solid var(--border);font-weight:600}
+.ord-table td{padding:12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top}
+.ord-table tr:hover{background:rgba(255,255,255,.02)}
+.ord-table tr.selected{background:rgba(0,167,225,.08)}
+.ord-status{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.ord-status.processing{background:rgba(34,197,94,.12);color:#22c55e}
+.ord-status.completed{background:rgba(59,130,246,.12);color:#60a5fa}
+.ord-status.on-hold{background:rgba(245,158,11,.12);color:#f59e0b}
+.ord-status.failed{background:rgba(239,68,68,.12);color:#ef4444}
+.ord-status.pending{background:rgba(245,158,11,.12);color:#f59e0b}
+.ord-status.cancelled{background:rgba(107,114,128,.12);color:#9ca3af}
+.ord-status.refunded{background:rgba(139,92,246,.12);color:#8b5cf6}
+.ord-detail{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.ord-detail h3{font-size:16px;font-weight:700;margin:0 0 16px;color:var(--text)}
+.ord-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.ord-detail-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+.ord-detail-card h4{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin:0 0 10px;font-weight:600}
+.ord-detail-card p{margin:2px 0;font-size:13px;color:var(--text);line-height:1.6}
+.ord-items-table{width:100%;font-size:13px;border-collapse:collapse}
+.ord-items-table th{text-align:left;padding:8px;font-size:11px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border)}
+.ord-items-table td{padding:8px;border-bottom:1px solid var(--border);color:var(--text)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+      Replay
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="showView('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+      <div class="nav-item" onclick="showView('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Orders</div>
+      <div class="nav-item" onclick="showView('sessions')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Sessions</div>
+      <div class="nav-item" onclick="showView('interactions')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Interactions</div>
+      <div class="nav-item" onclick="showView('retention')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>Retention</div>
+      <div class="nav-item" onclick="showView('snippet')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Install Snippet</div>
+      <div class="nav-item" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</div>
+    </nav>
+    <div class="sidebar-footer">RevMED Replay v1.0</div>
+  </aside>
+  <main class="main" id="mainContent">
+    <div id="dashboardView">
+      <h1 style="font-size:24px;font-weight:800;margin-bottom:24px;letter-spacing:-.02em">📊 Dashboard</h1>
+      <div class="stats" id="statsGrid"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h2 class="section-title" style="margin:0">💰 Today's Sales</h2>
+        <span id="salesDateLabel" style="font-size:12px;color:var(--text2)"></span>
+      </div>
+      <div class="sales-grid" id="salesStats">
+        <div class="sales-card"><div class="val green">$0</div><div class="lbl">Revenue</div></div>
+        <div class="sales-card"><div class="val cyan">0</div><div class="lbl">Orders</div></div>
+        <div class="sales-card"><div class="val purple">$0</div><div class="lbl">Avg Order</div></div>
+        <div class="sales-card"><div class="val amber">0%</div><div class="lbl">Conv Rate</div></div>
+      </div>
+      <div class="sales-chart-wrap"><canvas id="salesChart"></canvas></div>
+      <div class="sales-feed" id="salesFeed"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h2 class="section-title" style="margin:0">🌍 Visitor Globe</h2>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="globeTheme" class="page-filter" onchange="switchGlobeTheme(this.value)" style="font-size:11px">
+            <option value="night">Night Earth</option>
+            <option value="holographic">Holographic</option>
+            <option value="blue">Blue Marble</option>
+            <option value="topology">Topology</option>
+            <option value="dark">Clean Dark</option>
+          </select>
+          <button onclick="refreshGlobe()" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px">↻ Refresh</button>
+        </div>
+      </div>
+      <div id="globeContainer">
+        <div class="globe-legend"><span><div class="globe-dot-active"></div>Live</span><span><div class="globe-dot-total"></div>Total Sessions</span></div>
+      </div>
+      <div class="section-header">
+        <div style="display:flex;align-items:center;gap:16px">
+          <h2 class="section-title">Recent Sessions</h2>
+          <div class="filter-btns">
+            <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+            <button class="filter-btn live-btn" onclick="setFilter('live',this)">● Live</button>
+            <button class="filter-btn" onclick="setFilter('ended',this)">Ended</button>
+            <button class="filter-btn cart-btn" onclick="setFilter('cart',this)">🛒 Cart</button>
+            <button class="filter-btn order-btn" onclick="setFilter('order',this)">📦 Order</button>
+            <button class="filter-btn snooper-btn" onclick="setFilter('snooper',this)">🕵️ Snoopers</button>
+          </div>
+          <select id="pageFilter" class="page-filter" onchange="loadSessions(1)">
+            <option value="">All Pages</option>
+          </select>
+        </div>
+        <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="searchInput" placeholder="Search by URL, IP, browser..." oninput="debounceSearch()"></div>
+      </div>
+      <table class="sessions-table"><thead><tr><th>Status</th><th>Page</th><th>Location</th><th>Source</th><th>Device</th><th>🛒 Cart</th><th>📦 Order</th><th>💰 Amount</th><th>Duration</th><th>Time</th><th>Actions</th></tr></thead><tbody id="sessionsBody"></tbody></table>
+      <div id="emptyState" class="empty-state" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg><h3>No sessions recorded yet</h3><p>Add the recording snippet to your website to start capturing visitor sessions.</p></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+    <div id="retentionView" style="display:none">
+      <h1 style="font-size:24px;font-weight:800;margin-bottom:20px;letter-spacing:-.02em">📊 Scroll Retention</h1>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+        <select id="retPageSelect" class="page-filter" onchange="loadRetention()" style="max-width:300px">
+          <option value="">Select a page...</option>
+        </select>
+        <div class="ret-view-toggle">
+          <button class="active" onclick="setRetView('chart',this)">📊 Chart</button>
+          <button onclick="setRetView('heatmap',this)">🔥 Heatmap</button>
+        </div>
+        <button onclick="loadRetentionPages()" style="background:none;border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px">↻ Refresh</button>
+      </div>
+      <div id="retContent"><div style="text-align:center;padding:60px;color:var(--text2)">Select a page above to view scroll retention data.<br>Data starts collecting as visitors browse your site.</div></div>
+      <div id="retHeatmap" style="display:none"></div>
+    </div>
+    <div id="ordersView" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h1 style="font-size:24px;font-weight:800;letter-spacing:-.02em;margin:0">🛍️ Orders</h1>
+        <div class="filter-btns">
+          <button class="filter-btn active" onclick="setOrderFilter('all',this)">All</button>
+          <button class="filter-btn" style="--c:#22c55e" onclick="setOrderFilter('processing',this)">Processing</button>
+          <button class="filter-btn" style="--c:#60a5fa" onclick="setOrderFilter('completed',this)">Completed</button>
+          <button class="filter-btn" style="--c:#ef4444" onclick="setOrderFilter('failed',this)">Failed</button>
+          <button class="filter-btn" style="--c:#f59e0b" onclick="setOrderFilter('pending',this)">Pending</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:20px;min-height:500px">
+        <div style="flex:1;overflow-y:auto;max-height:80vh">
+          <table class="ord-table"><thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Location</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody id="ordersBody"></tbody></table>
+          <div id="ordersEmpty" style="display:none;text-align:center;padding:40px;color:var(--text2)">No orders found</div>
+        </div>
+        <div id="orderDetailPanel" style="width:380px;flex-shrink:0;overflow-y:auto;max-height:80vh">
+          <div style="text-align:center;padding:60px 20px;color:var(--text2)"><p style="font-size:32px;margin-bottom:8px">📋</p><p style="font-size:13px">Select an order to view details</p></div>
+        </div>
+      </div>
+    </div>
+    <div id="interactionsView" style="display:none">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+        <h1 style="font-size:24px;font-weight:800;letter-spacing:-.02em;margin:0">⚡ Interactions</h1>
+        <div class="search-box" style="margin-left:auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="visitorSearch" placeholder="Search IP, city..." oninput="debounceVisitorSearch()"></div>
+        <span id="visitorCount" style="font-size:12px;color:#888"></span>
+      </div>
+      <div style="display:flex;gap:20px;min-height:500px">
+        <div id="visitorsList" style="width:340px;flex-shrink:0;overflow-y:auto;max-height:75vh;display:flex;flex-direction:column;gap:8px"></div>
+        <div id="visitorDetail" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;overflow-y:auto;max-height:75vh">
+          <div style="text-align:center;padding:60px 20px;color:#666"><p style="font-size:40px;margin-bottom:12px">👤</p><p style="font-size:14px">Select a visitor to view their interactions</p></div>
+        </div>
+      </div>
+    </div>
+    <div id="snippetView" class="snippet-view" style="display:none">
+      <h1 style="font-size:24px;font-weight:800;margin-bottom:24px">🔧 Install Recording Snippet</h1>
+      <div class="snippet-card"><h3>Add to your website</h3><p>Paste this single line into your website's head tag:</p><div class="code-block"><button class="copy-btn" onclick="copySnippet()">Copy</button>&lt;script src="<span id="snippetUrl"></span>/snippet.js" defer&gt;&lt;/script&gt;</div></div>
+      <div class="snippet-card"><h3>Privacy &amp; Security</h3><p>✅ All text inputs are masked by default<br>✅ Password fields are blocked<br>✅ Elements with class <code>.no-record</code> are excluded<br>✅ Data stays on YOUR server</p></div>
+    </div>
+    <div id="settingsView" class="snippet-view" style="display:none">
+      <h1 style="font-size:24px;font-weight:800;margin-bottom:8px;letter-spacing:-.02em">⚙️ Settings</h1>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:32px">Control checkout behaviour across all RevMED product pages.</p>
+      <div class="snippet-card" style="max-width:600px">
+        <h3 style="margin-bottom:4px">Payment Gateway</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Switch the live checkout between Stripe (WooPayments) and Whop subscriptions. Changes take effect immediately for all new visitors.</p>
+        <div style="display:flex;align-items:center;gap:20px;padding:20px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+          <span id="gwLabelStripe" style="font-size:14px;font-weight:700;color:var(--accent);transition:all .2s">💳 Stripe</span>
+          <label style="position:relative;display:inline-block;width:56px;height:30px;cursor:pointer">
+            <input type="checkbox" id="gatewayToggle" onchange="toggleGateway()" style="opacity:0;width:0;height:0">
+            <span style="position:absolute;inset:0;background:#2f3b52;border-radius:30px;transition:all .3s"></span>
+            <span id="toggleKnob" style="position:absolute;top:3px;left:3px;width:24px;height:24px;background:#fff;border-radius:50%;transition:all .3s;box-shadow:0 2px 4px rgba(0,0,0,.3)"></span>
+          </label>
+          <span id="gwLabelWhop" style="font-size:14px;font-weight:700;color:var(--text2);transition:all .2s">🔄 Whop</span>
+        </div>
+        <div id="gwStatus" style="margin-top:16px;padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;display:none"></div>
+        <div style="margin-top:20px;padding:14px 16px;background:rgba(0,167,225,.06);border:1px solid rgba(0,167,225,.15);border-radius:8px">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">ℹ️ How it works</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">
+            <strong>Stripe</strong> — Uses WooPayments/Stripe card fields. One-time charges processed by WooCommerce.<br>
+            <strong>Whop</strong> — Embedded Whop checkout. Monthly subscriptions with auto-renewal. Plans mapped per product &amp; bundle tier.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="playerModal">
+  <div class="modal">
+    <div class="modal-head"><div><h3 id="modalTitle">Session Replay</h3><div class="modal-meta" id="modalMeta"></div></div><button class="modal-close" onclick="closePlayer()">✕</button></div>
+    <div class="modal-content-row">
+      <div class="modal-body"><div class="player-viewport" id="playerContainer"></div></div>
+      <div class="activity-panel">
+        <div class="activity-header">📋 Activity Log</div>
+        <div class="activity-list" id="activityList"><div class="activity-empty">No activity tracked</div></div>
+      </div>
+    </div>
+    <div class="player-controls">
+      <button class="ctrl-btn" id="playPauseBtn" onclick="togglePlay()">⏸</button>
+      <div class="timeline" id="timeline" onclick="seekTimeline(event)"><div class="timeline-fill" id="timelineFill"></div></div>
+      <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+      <select class="speed-select" id="speedSelect" onchange="changeSpeed()"><option value="1">1x</option><option value="2">2x</option><option value="4">4x</option><option value="8">8x</option></select>
+    </div>
+  </div>
+</div>
+
+<!-- rrweb v1.1.3 stable (includes Replayer) -->
+<script src="https://cdn.jsdelivr.net/npm/rrweb@1.1.3/dist/rrweb.min.js"></script>
+<script src="https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+const API = window.location.origin + '/api';
+let currentPage = 1, searchTimer = null, replayer = null, replayTimer = null;
+
+let interactionPage = 1, interactionSearchTimer = null;
+function showView(v) {
+  document.getElementById('dashboardView').style.display = v==='dashboard'||v==='sessions'?'':'none';
+  document.getElementById('ordersView').style.display = v==='orders'?'':'none';
+  document.getElementById('interactionsView').style.display = v==='interactions'?'':'none';
+  document.getElementById('retentionView').style.display = v==='retention'?'':'none';
+  document.getElementById('snippetView').style.display = v==='snippet'?'':'none';
+  document.getElementById('settingsView').style.display = v==='settings'?'':'none';
+  document.querySelectorAll('.nav-item').forEach((n,i) => n.classList.toggle('active',(v==='dashboard'&&i===0)||(v==='orders'&&i===1)||(v==='sessions'&&i===2)||(v==='interactions'&&i===3)||(v==='retention'&&i===4)||(v==='snippet'&&i===5)||(v==='settings'&&i===6)));
+  if(v==='snippet') document.getElementById('snippetUrl').textContent = window.location.origin;
+  if(v==='interactions') loadInteractions();
+  if(v==='retention') loadRetentionPages();
+  if(v==='orders') loadOrders();
+  if(v==='settings') loadGatewayState();
+}
+
+function fmt(ms){if(!ms||ms<1000)return'< 1s';const s=Math.floor(ms/1000);if(s<60)return s+'s';return Math.floor(s/60)+'m '+(s%60)+'s'}
+function fmtTime(ms){const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function timeAgo(ts){const d=Date.now()-ts;if(d<60000)return'Just now';if(d<3600000)return Math.floor(d/60000)+'m ago';if(d<86400000)return Math.floor(d/3600000)+'h ago';return Math.floor(d/86400000)+'d ago'}
+function fullTime(ts){if(!ts)return'—';const d=new Date(ts);return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true})}
+function devBadge(t){const c=t==='mobile'?' mobile':t==='tablet'?' tablet':'';return`<span class="device-badge${c}">${t.charAt(0).toUpperCase()+t.slice(1)}</span>`}
+function srcBadge(s){
+  if(!s||!s.traffic_channel) return'<span class="source-badge direct">Direct</span>';
+  const ch=s.traffic_channel.toLowerCase();
+  let cls='direct';
+  if(ch.includes('paid')) cls='paid';
+  else if(ch.includes('organic')) cls='organic';
+  else if(ch.includes('social')) cls='social';
+  else if(ch.includes('referral')) cls='referral';
+  else if(ch.includes('campaign')) cls='campaign';
+  return`<span class="source-badge ${cls}">${s.traffic_source||s.traffic_channel}</span>`;
+}
+function locText(s){
+  if(!s.city&&!s.country) return'<span class="loc-text">—</span>';
+  const loc=s.city?s.city+', '+s.country:s.country;
+  return`<span class="loc-text" title="IP: ${s.ip||'?'}">📍 ${loc}</span><br><span class="ip-text">${s.ip||''}</span>`;
+}
+
+async function loadStats(){
+  try{const r=await fetch(API+'/stats');const d=await r.json();
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Live Now</div><div class="stat-value">${d.activeNow}</div><div class="stat-sub">Active visitors</div></div>
+    <div class="stat-card"><div class="stat-label">Today</div><div class="stat-value">${d.todayCount}</div><div class="stat-sub">Sessions recorded</div></div>
+    <div class="stat-card"><div class="stat-label">This Week</div><div class="stat-value">${d.weekCount}</div><div class="stat-sub">Total sessions</div></div>
+    <div class="stat-card"><div class="stat-label">All Time</div><div class="stat-value">${d.total}</div><div class="stat-sub">Total sessions</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Duration</div><div class="stat-value">${d.avgDuration}s</div><div class="stat-sub">Per session</div></div>`;
+  }catch(e){console.error(e)}
+}
+
+let sessionFilter = 'all';
+function setFilter(f, btn) {
+  sessionFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadSessions(1);
+}
+
+async function loadSessions(page=1){
+  currentPage=page;const search=document.getElementById('searchInput').value;
+  const pageFilter=document.getElementById('pageFilter').value;
+  try{const r=await fetch(`${API}/sessions?page=${page}&limit=20&search=${encodeURIComponent(search)}&filter=${sessionFilter}&pageUrl=${encodeURIComponent(pageFilter)}`);const d=await r.json();
+  const tbody=document.getElementById('sessionsBody'),empty=document.getElementById('emptyState');
+  if(!d.sessions.length){tbody.innerHTML='';empty.style.display='';document.getElementById('pagination').innerHTML='';return}
+  empty.style.display='none';
+  tbody.innerHTML=d.sessions.map(s=>{const live=s.is_active&&(Date.now()-s.last_activity<30000);
+  const cartBadge=s.added_to_cart?'<span class="conv-badge cart">🛒 Yes</span>':'<span class="conv-badge none">—</span>';
+  const orderBadge=s.placed_order?'<span class="conv-badge order">✅ Yes</span>':'<span class="conv-badge none">—</span>';
+  const amountBadge=s.cart_amount?'<span class="conv-badge amount">'+s.cart_amount+'</span>':'<span class="conv-badge none">—</span>';
+  const snooperTag=s.is_snooper?'<br><span class="snooper-tag">🕵️ '+(s.snooper_reason||'Snooper')+'</span>':'';
+  return`<tr onclick="playSession('${s.id}')" ${s.is_snooper?'style="background:rgba(239,68,68,.04)"':''}><td><span class="status-dot ${live?'active':'ended'}"></span>${live?'Live':'Ended'}</td><td title="${s.page_url}">${s.page_url?(s.page_url.length>35?s.page_url.slice(0,35)+'…':s.page_url):'/'}</td><td>${locText(s)}${snooperTag}</td><td>${srcBadge(s)}</td><td>${devBadge(s.device||'desktop')}</td><td>${cartBadge}</td><td>${orderBadge}</td><td>${amountBadge}</td><td>${fmt(s.duration)}</td><td style="font-size:12px"><span style="color:var(--text1)">${fullTime(s.started_at)}</span><br><span style="color:var(--text2);font-size:11px">${timeAgo(s.started_at)}</span></td><td><button class="play-btn" onclick="event.stopPropagation();playSession('${s.id}')">▶ Play</button> <button class="del-btn" onclick="event.stopPropagation();deleteSession('${s.id}')">✕</button></td></tr>`}).join('');
+  const tp=Math.ceil(d.total/d.limit);let p='';for(let i=1;i<=Math.min(tp,10);i++)p+=`<button class="page-btn${i===page?' active':''}" onclick="loadSessions(${i})">${i}</button>`;
+  document.getElementById('pagination').innerHTML=p;
+  }catch(e){console.error(e)}
+}
+
+// ── Interactions (Visitor Folders) ──
+function actionBadge(a){
+  const al=(a||'').toLowerCase();
+  let cls='action-other',icon='⚡';
+  if(al.includes('click')){cls='action-click';icon='👆'}
+  else if(al.includes('page')||al.includes('view')){cls='action-page';icon='📄'}
+  else if(al.includes('cart')){cls='action-cart';icon='🛒'}
+  else if(al.includes('checkout')){cls='action-checkout';icon='💳'}
+  else if(al.includes('purchase')){cls='action-purchase';icon='✅'}
+  else if(al.includes('scroll')){cls='action-scroll';icon='📜'}
+  else if(al.includes('pixel')||al.includes('fbq')||al.includes('meta')){cls='action-pixel';icon='📡'}
+  return`<span class="action-badge ${cls}">${icon} ${a||'Unknown'}</span>`;
+}
+let visitorSearchTimer=null;
+function debounceVisitorSearch(){clearTimeout(visitorSearchTimer);visitorSearchTimer=setTimeout(()=>loadVisitors(),300)}
+function loadInteractions(){loadVisitors()}
+async function loadVisitors(){
+  const search=(document.getElementById('visitorSearch')||{}).value||'';
+  try{
+    const r=await fetch(`${API}/visitors?search=${encodeURIComponent(search)}`);
+    const d=await r.json();
+    document.getElementById('visitorCount').textContent=d.total+' visitors';
+    const list=document.getElementById('visitorsList');
+    if(!d.visitors.length){list.innerHTML='<div style="text-align:center;padding:40px;color:#666">No visitors found</div>';return}
+    list.innerHTML=d.visitors.map(v=>{
+      const loc=v.city?(v.city+', '+v.country):(v.country||'Unknown');
+      const funnel=[];
+      if(v.has_cart)funnel.push('🛒');
+      if(v.has_checkout)funnel.push('💳');
+      if(v.has_purchase)funnel.push('✅');
+      const funnelStr=funnel.length?'<div style="margin-top:4px">'+funnel.join(' → ')+'</div>':'';
+      return`<div class="visitor-card" onclick="selectVisitor('${v.ip}',this)" data-ip="${v.ip}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(0,180,216,.2),rgba(0,180,216,.05));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">👤</div>
+          <div style="min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${v.ip||'Unknown'}</div>
+            <div style="font-size:11px;color:var(--text2)">📍 ${loc} · ${devBadge(v.device_type||'desktop')}</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;color:var(--text2)">
+          <span>${v.interactions} events · ${v.sessions} session${v.sessions>1?'s':''}</span>
+          <span title="${fullTime(v.last_seen)}">${fullTime(v.last_seen)}</span>
+        </div>
+        ${funnelStr}
+      </div>`;
+    }).join('');
+  }catch(e){console.error(e)}
+}
+async function selectVisitor(ip,el){
+  document.querySelectorAll('.visitor-card').forEach(c=>c.classList.remove('selected'));
+  if(el)el.classList.add('selected');
+  const detail=document.getElementById('visitorDetail');
+  detail.innerHTML='<div style="text-align:center;padding:40px;color:#666">Loading...</div>';
+  try{
+    const r=await fetch(`${API}/visitors/${encodeURIComponent(ip)}`);
+    const d=await r.json();
+    if(!d.interactions.length){detail.innerHTML='<p style="color:#666;text-align:center;padding:40px">No interactions recorded</p>';return}
+    const first=d.interactions[d.interactions.length-1];
+    const loc=first.city?(first.city+', '+first.country):'Unknown';
+    let html=`<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">${ip}</div>
+      <div style="font-size:12px;color:var(--text2)">📍 ${loc} · ${first.browser||''} · ${srcBadge(first)}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px">${d.total} interactions</div>
+    </div><div class="visitor-timeline">`;
+    for(const a of d.interactions){
+      const t=new Date(a.timestamp);
+      const ts=t.toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      html+=`<div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            ${actionBadge(a.action)}
+            <span style="font-size:11px;color:var(--text2)">${ts}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text);margin-top:4px">${a.detail||''}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${a.page_url||''}</div>
+        </div>
+      </div>`;
+    }
+    html+='</div>';
+    detail.innerHTML=html;
+  }catch(e){console.error(e);detail.innerHTML='<p style="color:#f66">Error loading interactions</p>'}
+}
+
+async function playSession(id){
+  try{
+    const r=await fetch(`${API}/sessions/${id}`);const d=await r.json();
+    if(!d.events||d.events.length<2){alert('Not enough events to replay.');return}
+
+    // Check for FullSnapshot (type 2) — required for replay
+    const hasSnapshot=d.events.some(e=>e.type===2);
+    const typeCounts={};
+    d.events.forEach(e=>typeCounts[e.type]=(typeCounts[e.type]||0)+1);
+    console.log('Session events:',d.events.length,'types:',typeCounts,'hasSnapshot:',hasSnapshot);
+
+    if(!hasSnapshot){
+      alert('This session is missing the initial page snapshot (only has mouse/scroll data).\n\nThis was caused by a now-fixed bug. New sessions will replay correctly.');
+      return;
+    }
+
+    const s=d.session;
+    const loc=s.city?(s.city+', '+s.country):(s.country||'');
+    document.getElementById('modalTitle').textContent=`Session — ${s.page_url||'/'}`;
+    document.getElementById('modalMeta').innerHTML=`<span>${devBadge(s.device||'desktop')}</span><span>${s.browser||'Unknown'}</span>${loc?`<span>📍 ${loc}</span>`:''}${s.ip?`<span style="opacity:.5">${s.ip}</span>`:''}<span>${srcBadge(s)}</span><span>${fmt(s.duration)}</span>`;
+
+    const container=document.getElementById('playerContainer');
+    container.innerHTML='';
+    document.getElementById('playerModal').classList.add('active');
+    document.body.style.overflow='hidden';
+
+    const srcW=s.screen_width||1920, srcH=s.screen_height||1080;
+
+    // Let the modal render first so we can measure available space
+    await new Promise(r=>setTimeout(r,100));
+    const bodyEl=document.querySelector('.modal-body');
+    const availW=bodyEl.offsetWidth-20;
+    const availH=bodyEl.offsetHeight-20;
+    const scale=Math.min(availW/srcW,availH/srcH,1);
+    const scaledW=Math.round(srcW*scale);
+    const scaledH=Math.round(srcH*scale);
+    console.log('[Player] recorded='+srcW+'x'+srcH+' available='+availW+'x'+availH+' scale='+scale.toFixed(4)+' output='+scaledW+'x'+scaledH);
+
+    // Create rrweb Replayer
+    replayer=new rrweb.Replayer(d.events,{
+      root: container,
+      skipInactive: true,
+      showWarning: false,
+      showDebug: false,
+      blockClass: 'no-record',
+      speed: 1,
+      insertStyleRules: [
+        '.replayer-mouse{position:absolute;width:20px;height:20px;transition:all .05s linear}',
+        '.replayer-mouse::after{content:"";display:block;width:20px;height:20px;border-radius:50%;background:rgba(0,167,225,.4);border:2px solid #00A7E1}'
+      ]
+    });
+
+    // Set container to exact scaled size, scale the internal wrapper
+    container.style.width=scaledW+'px';
+    container.style.height=scaledH+'px';
+    const wrapper=container.querySelector('.replayer-wrapper');
+    if(wrapper){
+      wrapper.style.width=srcW+'px';
+      wrapper.style.height=srcH+'px';
+      wrapper.style.transform='scale('+scale+')';
+      wrapper.style.transformOrigin='top left';
+    }
+
+    replayer.play();
+    document.getElementById('playPauseBtn').textContent='⏸';
+    document.getElementById('playPauseBtn').classList.remove('paused');
+    document.getElementById('speedSelect').value='1';
+
+    // Populate activity log
+    const actList=document.getElementById('activityList');
+    const activities=d.activities||[];
+    if(activities.length){
+      const actIcons={add_to_cart:['🛒','cart','Added to Cart'],place_order:['💳','order','Placed Order'],checkout_start:['📝','checkout','Started Checkout'],product_view:['👁','view','Viewed Product'],product_click:['👆','view','Clicked Product'],cart_view:['🛒','cart','Viewed Cart'],page_view:['📄','view','Page View'],shop_click:['🏪','view','Visited Shop'],account_view:['👤','view','Account Page'],upsell_accept:['⭐','upsell','Accepted Upsell'],subscribe_click:['🔄','upsell','Subscribe Click'],meta_pixel:['🟦','meta','Meta Pixel'],google_pixel:['🔵','google','Google Tag'],tiktok_pixel:['♬','tiktok','TikTok Pixel'],snap_pixel:['👻','snap','Snap Pixel'],pinterest_pixel:['📌','pinterest','Pinterest Pixel']};
+      const startTs=s.started_at;
+      actList.innerHTML=activities.map(a=>{
+        const cfg=actIcons[a.action]||['📌','view',a.action];
+        const elapsed=Math.max(0,Math.round((a.timestamp-startTs)/1000));
+        const mins=Math.floor(elapsed/60);
+        const secs=elapsed%60;
+        const timeStr=mins>0?mins+'m '+secs+'s':secs+'s';
+        return`<div class="activity-item"><div class="activity-icon ${cfg[1]}">${cfg[0]}</div><div class="activity-info"><div class="activity-action">${cfg[2]}</div>${a.detail?`<div class="activity-detail" title="${a.detail}">${a.detail}</div>`:''}</div><div class="activity-time">${timeStr}</div></div>`;
+      }).join('');
+    } else {
+      actList.innerHTML='<div class="activity-empty">No activity tracked yet.<br>New sessions will show Add to Cart, Place Order, etc.</div>';
+    }
+
+    const meta=replayer.getMetaData();
+    const totalTime=meta.totalTime;
+    clearInterval(replayTimer);
+    replayTimer=setInterval(()=>{
+      if(!replayer)return;
+      const current=replayer.getCurrentTime();
+      const pct=Math.min(100,(current/totalTime)*100);
+      document.getElementById('timelineFill').style.width=pct+'%';
+      document.getElementById('timeDisplay').textContent=fmtTime(current)+' / '+fmtTime(totalTime);
+      if(current>=totalTime){
+        clearInterval(replayTimer);
+        document.getElementById('playPauseBtn').textContent='▶';
+        document.getElementById('playPauseBtn').classList.add('paused');
+      }
+    },250);
+
+  }catch(e){console.error('Replay error:',e);alert('Error loading replay: '+e.message)}
+}
+
+function togglePlay(){
+  if(!replayer)return;
+  const btn=document.getElementById('playPauseBtn');
+  if(btn.classList.contains('paused')){
+    const meta=replayer.getMetaData();
+    const current=replayer.getCurrentTime();
+    if(current>=meta.totalTime) replayer.play(0);
+    else replayer.resume();
+    btn.textContent='⏸';btn.classList.remove('paused');
+  }else{
+    replayer.pause();
+    btn.textContent='▶';btn.classList.add('paused');
+  }
+}
+
+function changeSpeed(){
+  if(!replayer)return;
+  const speed=parseInt(document.getElementById('speedSelect').value);
+  replayer.setConfig({speed});
+}
+
+function seekTimeline(e){
+  if(!replayer)return;
+  const rect=e.target.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  const meta=replayer.getMetaData();
+  replayer.play(Math.floor(pct*meta.totalTime));
+  document.getElementById('playPauseBtn').textContent='⏸';
+  document.getElementById('playPauseBtn').classList.remove('paused');
+}
+
+function closePlayer(){
+  clearInterval(replayTimer);
+  if(replayer){try{replayer.pause()}catch(e){}}
+  replayer=null;
+  document.getElementById('playerModal').classList.remove('active');
+  document.getElementById('playerContainer').innerHTML='';
+  document.body.style.overflow='';
+}
+
+async function deleteSession(id){if(!confirm('Delete this session?'))return;await fetch(`${API}/sessions/${id}`,{method:'DELETE'});loadSessions(currentPage);loadStats()}
+function debounceSearch(){clearTimeout(searchTimer);searchTimer=setTimeout(()=>loadSessions(1),300)}
+function copySnippet(){navigator.clipboard.writeText(`<script src="${window.location.origin}/snippet.js" defer><\/script>`);event.target.textContent='Copied!';setTimeout(()=>event.target.textContent='Copy',2000)}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlayer();if(e.key===' '&&replayer){e.preventDefault();togglePlay()}});
+document.getElementById('playerModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closePlayer()});
+
+// ── Retention Tab ──
+async function loadRetentionPages() {
+  try {
+    const r = await fetch(API + '/retention');
+    const d = await r.json();
+    const sel = document.getElementById('retPageSelect');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Select a page...</option>';
+    (d.pages || []).forEach(p => {
+      const label = ((p.page || '').replace(/^\/|\/$/g,'').replace(/-/g,' ') || 'Homepage').replace(/\b\w/g, c => c.toUpperCase());
+      sel.innerHTML += `<option value="${p.page}" ${p.page===cur?'selected':''}>${label} (${p.visitors} visitors)</option>`;
+    });
+    if (cur) loadRetention();
+  } catch(e) { console.error(e); }
+}
+
+let retViewMode = 'chart';
+let lastRetData = null;
+
+function setRetView(mode, btn) {
+  retViewMode = mode;
+  document.querySelectorAll('.ret-view-toggle button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const content = document.getElementById('retContent');
+  const heatmap = document.getElementById('retHeatmap');
+  if (mode === 'chart') { content.style.display = ''; heatmap.style.display = 'none'; }
+  else { content.style.display = 'none'; heatmap.style.display = ''; }
+  if (lastRetData) renderCurrentView(lastRetData);
+}
+
+function renderCurrentView(d) {
+  if (retViewMode === 'chart') renderRetChart(d);
+  else renderRetHeatmap(d);
+}
+
+function renderRetChart(d) {
+  const content = document.getElementById('retContent');
+  let html = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--text)">${d.totalVisitors}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Total Visitors</div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--text)">${d.avgMaxDepth}%</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Avg Scroll Depth</div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--text)">${d.avgTimeOnPage}s</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Avg Time on Page</div></div>
+  </div>`;
+  html += '<h2 style="font-size:16px;font-weight:700;margin-bottom:14px;color:var(--text)">📉 Scroll Depth Retention</h2>';
+  html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px">';
+  for (const r of d.retention) {
+    const color = r.pct > 60 ? '#22c55e' : r.pct > 30 ? '#f59e0b' : '#ef4444';
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div style="width:36px;text-align:right;font-size:11px;color:var(--text2);font-weight:600;font-family:'SF Mono',Consolas,monospace">${r.depth}%</div>
+      <div style="flex:1;position:relative;height:22px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${r.pct}%;background:${color};border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:10px;font-weight:700;color:#fff;transition:width .5s">${r.pct > 10 ? r.pct + '%' : ''}</div>
+      </div>
+      <div style="font-size:10px;color:var(--text2);width:90px;text-align:right">${r.visitors} visitors</div>
+    </div>`;
+  }
+  html += '</div>';
+  if (d.dropoffs && d.dropoffs.length) {
+    html += '<h2 style="font-size:16px;font-weight:700;margin-bottom:14px;color:var(--text)">⚠️ Biggest Drop-Off Points</h2>';
+    html += '<div style="display:grid;gap:10px;margin-bottom:24px">';
+    for (const drop of d.dropoffs) {
+      html += `<div style="display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px">
+        <div style="background:rgba(239,68,68,.15);color:#ef4444;font-weight:800;font-size:13px;padding:6px 12px;border-radius:8px;white-space:nowrap">-${drop.drop}%</div>
+        <div>
+          <div style="font-weight:600;color:var(--text);font-size:14px">At ${drop.from}% – ${drop.to}% scroll depth</div>
+          <div style="color:var(--text2);font-size:12px;margin-top:2px">${drop.drop}% of readers stopped scrolling here</div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  content.innerHTML = html;
+}
+
+function renderRetHeatmap(d) {
+  const heatmap = document.getElementById('retHeatmap');
+  const page = document.getElementById('retPageSelect').value;
+  if (!page || !d.totalVisitors) { heatmap.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text2)">No data available for heatmap.</div>'; return; }
+  const siteUrl = 'https://revmedsups.com';
+  const fullUrl = siteUrl + page;
+  let html = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--text)">${d.totalVisitors}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Visitors</div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--green)">${d.avgMaxDepth}%</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Avg Depth</div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--amber)">${d.avgTimeOnPage}s</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Avg Time</div></div>
+  </div>`;
+  html += `<div class="heatmap-scroll" id="heatmapScroll">
+    <div class="heatmap-inner" id="heatmapInner">
+      <iframe class="heatmap-iframe" id="heatmapFrame" src="${fullUrl}" style="pointer-events:none"></iframe>
+      <div class="heatmap-overlay" id="heatmapOverlay"></div>
+    </div>
+    <div class="heatmap-ruler"><div class="heatmap-ruler-float" id="heatmapRuler"></div></div>
+  </div>`;
+  heatmap.innerHTML = html;
+
+  // Wait for iframe to load, then size the container and build bands
+  const frame = document.getElementById('heatmapFrame');
+  const buildOverlay = () => {
+    const inner = document.getElementById('heatmapInner');
+    const overlay = document.getElementById('heatmapOverlay');
+    const scroll = document.getElementById('heatmapScroll');
+    const ruler = document.getElementById('heatmapRuler');
+    if (!overlay || !inner) return;
+
+    // Try to get real iframe content height, fallback to estimate
+    let iframeH = 6000;
+    try { iframeH = frame.contentDocument.documentElement.scrollHeight || 6000; } catch(e) {}
+    frame.style.height = iframeH + 'px';
+    inner.style.height = iframeH + 'px';
+
+    // Build color bands
+    let bands = '';
+    const retData = d.retention.filter(r => r.depth <= 100);
+    for (let i = 0; i < retData.length; i++) {
+      const r = retData[i];
+      const nextR = retData[i + 1];
+      const topPct = r.depth;
+      const heightPct = nextR ? (nextR.depth - r.depth) : (100 - r.depth);
+      if (heightPct <= 0) continue;
+      const hue = Math.round((r.pct / 100) * 120);
+      const alpha = 0.3;
+      bands += `<div class="heatmap-band" style="top:${topPct}%;height:${heightPct}%;background:hsla(${hue},80%,50%,${alpha});border-bottom:1px solid hsla(${hue},80%,40%,.5)">
+        <span class="heatmap-band-label">${r.pct}% · ${r.visitors} readers</span>
+      </div>`;
+    }
+    overlay.innerHTML = bands;
+
+    // Sticky ruler that updates as you scroll
+    const updateRuler = () => {
+      if (!scroll) return;
+      const scrollPct = Math.round((scroll.scrollTop / (scroll.scrollHeight - scroll.clientHeight)) * 100) || 0;
+      let items = '';
+      for (let p = 0; p <= 100; p += 10) {
+        const isActive = Math.abs(p - scrollPct) < 6;
+        const match = retData.find(r => r.depth === p);
+        const pctLabel = match ? match.pct + '%' : '';
+        items += `<div class="heatmap-ruler-item${isActive?' active':''}">${p}%${pctLabel ? ' · ' + pctLabel : ''}</div>`;
+      }
+      ruler.innerHTML = items;
+    };
+    scroll.addEventListener('scroll', updateRuler);
+    updateRuler();
+  };
+
+  frame.addEventListener('load', () => setTimeout(buildOverlay, 300));
+  setTimeout(buildOverlay, 2000); // fallback
+}
+
+async function loadRetention() {
+  const page = document.getElementById('retPageSelect').value;
+  const content = document.getElementById('retContent');
+  const heatmap = document.getElementById('retHeatmap');
+  if (!page) {
+    content.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text2)">Select a page above to view scroll retention data.</div>';
+    heatmap.innerHTML = '';
+    lastRetData = null;
+    return;
+  }
+  try {
+    const r = await fetch(API + '/retention?page=' + encodeURIComponent(page));
+    const d = await r.json();
+    lastRetData = d;
+    if (!d.totalVisitors) {
+      content.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text2)">No scroll data yet for this page.</div>';
+      heatmap.innerHTML = '';
+      return;
+    }
+    renderCurrentView(d);
+  } catch(e) { console.error(e); content.innerHTML = '<div style="color:#ef4444;padding:20px">Error loading data</div>'; }
+}
+
+// ── Sales & Orders API ──
+// Orders are proxied through this dashboard's own backend (same origin), which
+// injects the secret storefront key server-side. The key must never appear here.
+const ORDERS_API = API + '/orders';
+let salesChart = null;
+
+loadStats();loadSessions();loadPages();loadSales();
+setInterval(()=>{loadStats();loadSessions(currentPage);loadSales()},30000);
+
+
+async function loadSales() {
+  try {
+    const r = await fetch(ORDERS_API + '?days=1');
+    const d = await r.json();
+    const allOrders = d.orders || [];
+    
+    // Filter today's orders
+    const todayStr = new Date().toLocaleDateString('en-US', {month:'short',day:'numeric'});
+    const todayOrders = allOrders.filter(o => o.date && o.date.includes(todayStr));
+    
+    // Compute stats
+    const successful = todayOrders.filter(o => ['processing','completed','on-hold'].includes(o.status));
+    const failed = todayOrders.filter(o => o.status === 'failed');
+    const totalRevenue = successful.reduce((s,o) => s + parseFloat(o.total), 0);
+    const avgOrder = successful.length > 0 ? totalRevenue / successful.length : 0;
+    
+    document.getElementById('salesDateLabel').textContent = new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'});
+    
+    document.getElementById('salesStats').innerHTML = `
+      <div class="sales-card"><div class="val green">$${totalRevenue.toFixed(2)}</div><div class="lbl">Revenue</div></div>
+      <div class="sales-card"><div class="val cyan">${successful.length}</div><div class="lbl">Orders</div></div>
+      <div class="sales-card"><div class="val purple">$${avgOrder.toFixed(2)}</div><div class="lbl">Avg Order</div></div>
+      <div class="sales-card"><div class="val amber">${failed.length}</div><div class="lbl">Failed</div></div>`;
+    
+    // Build hourly data
+    const hourly = {};
+    for (let h = 0; h <= 23; h++) hourly[h] = { revenue: 0, orders: 0 };
+    for (const o of successful) {
+      const m = (o.date || '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (m) {
+        let hr = parseInt(m[1]);
+        if (m[3].toUpperCase() === 'AM' && hr === 12) hr = 0;
+        if (m[3].toUpperCase() === 'PM' && hr !== 12) hr += 12;
+        if (hourly[hr]) { hourly[hr].revenue += parseFloat(o.total); hourly[hr].orders++; }
+      }
+    }
+    const labels = Object.keys(hourly).map(h => { const hr = parseInt(h); if(hr===0) return '12AM'; if(hr===12) return '12PM'; return hr<12?hr+'AM':(hr-12)+'PM'; });
+    const revenue = Object.values(hourly).map(h => h.revenue);
+    const orders = Object.values(hourly).map(h => h.orders);
+    
+    if (salesChart) {
+      salesChart.data.labels = labels;
+      salesChart.data.datasets[0].data = revenue;
+      salesChart.data.datasets[1].data = orders;
+      salesChart.update('none');
+    } else {
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 200);
+      grad.addColorStop(0, 'rgba(34,197,94,.3)');
+      grad.addColorStop(1, 'rgba(34,197,94,0)');
+      salesChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{
+          label: 'Revenue ($)', data: revenue, borderColor: '#22c55e', backgroundColor: grad, fill: true,
+          tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#22c55e', pointHoverRadius: 6, yAxisID: 'y'
+        }, {
+          label: 'Orders', data: orders, borderColor: '#00A7E1', backgroundColor: 'transparent',
+          borderWidth: 2, borderDash: [5,5], tension: 0.4, pointRadius: 0, pointHoverRadius: 5, yAxisID: 'y1'
+        }]},
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: true, position: 'top', align: 'end', labels: { color: '#8892a4', font: { size: 11 }, boxWidth: 12, padding: 16 } },
+            tooltip: { backgroundColor: 'rgba(10,22,40,.95)', borderColor: 'rgba(0,180,216,.2)', borderWidth: 1, titleColor: '#e2e8f0', bodyColor: '#e2e8f0', padding: 12, cornerRadius: 8,
+              callbacks: { label: c => c.dataset.label==='Revenue ($)'?'$'+c.parsed.y.toFixed(2):c.parsed.y+' orders' } }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#556', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
+            y: { position: 'left', grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#22c55e', font: { size: 10 }, callback: v=>'$'+v } },
+            y1: { position: 'right', grid: { display: false }, ticks: { color: '#00A7E1', font: { size: 10 }, stepSize: 1 } }
+          }
+        }
+      });
+    }
+    
+    // Recent orders feed
+    const feed = document.getElementById('salesFeed');
+    const recent = todayOrders.slice(0, 1);
+    if (recent.length) {
+      const sc = {processing:'rgba(34,197,94,.12)',completed:'rgba(59,130,246,.12)',failed:'rgba(239,68,68,.12)',pending:'rgba(245,158,11,.12)'};
+      const tc = {processing:'#22c55e',completed:'#60a5fa',failed:'#ef4444',pending:'#f59e0b'};
+      feed.innerHTML = recent.map(o => `
+        <div class="sale-item">
+          <div class="sale-amount" style="color:${o.status==='failed'?'#ef4444':'#22c55e'}">$${o.total}</div>
+          <div class="sale-info"><strong>${o.items.map(i=>i.name).join(', ')}</strong><br>${o.billing.city?o.billing.city+', '+o.billing.state:''} · ${o.date}</div>
+          <div style="font-size:11px;padding:3px 10px;border-radius:12px;background:${sc[o.status]||'rgba(107,114,128,.12)'};color:${tc[o.status]||'#9ca3af'};font-weight:600">${o.status}</div>
+        </div>`).join('');
+    } else {
+      feed.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">No orders today yet</div>';
+    }
+  } catch(e) { console.error('Sales error:', e); }
+}
+
+// ── Orders Tab ──
+let currentOrderFilter = 'all';
+let ordersData = [];
+
+function setOrderFilter(f, el) {
+  currentOrderFilter = f;
+  el.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  loadOrders();
+}
+
+async function loadOrders() {
+  try {
+    const url = ORDERS_API + '?days=7' + (currentOrderFilter !== 'all' ? '&status=' + currentOrderFilter : '');
+    const r = await fetch(url);
+    const d = await r.json();
+    ordersData = d.orders || [];
+    
+    const body = document.getElementById('ordersBody');
+    const empty = document.getElementById('ordersEmpty');
+    
+    if (!ordersData.length) {
+      body.innerHTML = '';
+      empty.style.display = '';
+      return;
+    }
+    empty.style.display = 'none';
+    
+    body.innerHTML = ordersData.map((o, i) => `
+      <tr onclick="showOrderDetail(${i})" style="cursor:pointer" id="ordRow${i}">
+        <td style="font-weight:600;color:var(--accent)">#${o.id}</td>
+        <td style="white-space:nowrap">${o.date}</td>
+        <td>${o.billing.name}</td>
+        <td>${o.billing.city ? o.billing.city + ', ' + o.billing.state : '—'}</td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.items.map(i=>i.name).join(', ')}</td>
+        <td style="font-weight:700">$${o.total}</td>
+        <td><span class="ord-status ${o.status}">${o.status}</span></td>
+      </tr>`).join('');
+  } catch(e) { console.error('Orders error:', e); }
+}
+
+function showOrderDetail(idx) {
+  const o = ordersData[idx];
+  if (!o) return;
+  
+  // Highlight row
+  document.querySelectorAll('.ord-table tr').forEach(r => r.classList.remove('selected'));
+  const row = document.getElementById('ordRow' + idx);
+  if (row) row.classList.add('selected');
+  
+  const panel = document.getElementById('orderDetailPanel');
+  const statusColors = {processing:'#22c55e',completed:'#60a5fa','on-hold':'#f59e0b',failed:'#ef4444',pending:'#f59e0b',cancelled:'#9ca3af',refunded:'#8b5cf6'};
+  
+  panel.innerHTML = `
+    <div class="ord-detail">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 style="margin:0">Order #${o.id}</h3>
+        <span class="ord-status ${o.status}" style="font-size:12px">${o.status.toUpperCase()}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:20px">
+        ${o.date} · ${o.payment_method || 'N/A'} · <strong style="color:var(--text)">$${o.total}</strong>
+      </div>
+      
+      <div class="ord-detail-grid">
+        <div class="ord-detail-card">
+          <h4>👤 Customer</h4>
+          <p style="font-weight:600">${o.billing.name}</p>
+          <p><a href="mailto:${o.billing.email}" style="color:var(--accent);text-decoration:none">${o.billing.email}</a></p>
+          ${o.billing.phone ? '<p>📞 ' + o.billing.phone + '</p>' : ''}
+        </div>
+        <div class="ord-detail-card">
+          <h4>📍 Billing Address</h4>
+          <p>${o.billing.address || '—'}</p>
+          <p>${o.billing.city}, ${o.billing.state} ${o.billing.zip}</p>
+          <p>${o.billing.country}</p>
+        </div>
+      </div>
+      ${o.shipping_addr && o.shipping_addr.address ? `
+      <div class="ord-detail-card" style="margin-bottom:20px">
+        <h4>🚚 Shipping Address</h4>
+        <p>${o.shipping_addr.name || o.billing.name}</p>
+        <p>${o.shipping_addr.address}</p>
+        <p>${o.shipping_addr.city}, ${o.shipping_addr.state} ${o.shipping_addr.zip}</p>
+      </div>` : ''}
+      
+      <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin:0 0 10px">📦 Items</h4>
+      <table class="ord-items-table">
+        <thead><tr><th>Product</th><th>Qty</th><th>Total</th></tr></thead>
+        <tbody>
+          ${o.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>$${i.total}</td></tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="2" style="text-align:right;font-weight:600;padding-top:12px;border-top:2px solid var(--border)">Subtotal</td><td style="font-weight:600;padding-top:12px;border-top:2px solid var(--border)">$${o.subtotal}</td></tr>
+          <tr><td colspan="2" style="text-align:right;color:var(--text2)">Shipping</td><td style="color:${parseFloat(o.shipping) === 0 ? '#22c55e' : 'var(--text)'}">${parseFloat(o.shipping) === 0 ? 'FREE' : '$' + o.shipping}</td></tr>
+          <tr><td colspan="2" style="text-align:right;font-weight:800;font-size:16px">Total</td><td style="font-weight:800;font-size:16px;color:var(--text)">$${o.total}</td></tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+async function loadPages(){
+  try{
+    const r=await fetch(API+'/pages');
+    const d=await r.json();
+    const sel=document.getElementById('pageFilter');
+    const cur=sel.value;
+    sel.innerHTML='<option value="">All Pages</option>';
+    d.pages.forEach(p=>{
+      const label=p.replace(/^\//,'').replace(/\?.*$/,'').replace(/-/g,' ').replace(/\//,' › ')||'Homepage';
+      const short=label.length>30?label.slice(0,30)+'…':label;
+      sel.innerHTML+=`<option value="${p}" ${p===cur?'selected':''}>${short} (${d.counts[p]||0})</option>`;
+    });
+  }catch(e){console.error(e)}
+}
+
+// ── 3D Globe ──
+let globe = null;
+async function initGlobe() {
+  const container = document.getElementById('globeContainer');
+  if (!container || globe) return;
+  
+  globe = Globe()
+    .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
+    .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+    .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+    .atmosphereColor('#00b4d8')
+    .atmosphereAltitude(0.15)
+    .pointsData([])
+    .pointLat('lat')
+    .pointLng('lng')
+    .pointAltitude(d => d.active > 0 ? 0.06 : 0.02)
+    .pointRadius(d => Math.min(0.8, 0.2 + d.count * 0.05))
+    .pointColor(d => d.active > 0 ? '#00e5a0' : '#00b4d8')
+    .pointLabel(d => `<div style="background:rgba(10,22,40,.92);border:1px solid rgba(0,180,216,.3);border-radius:8px;padding:8px 12px;font-family:Inter,sans-serif;font-size:12px;color:#e2e8f0;min-width:120px">
+      <div style="font-weight:700;margin-bottom:3px">${d.city}, ${d.country}</div>
+      <div>${d.count} session${d.count>1?'s':''}</div>
+      ${d.active>0?'<div style="color:#00e5a0;font-weight:600;margin-top:2px">● '+d.active+' live now</div>':''}
+    </div>`)
+    .pointsMerge(false)
+    .width(container.clientWidth)
+    .height(420)
+    (container);
+
+  // Set initial view
+  globe.controls().autoRotate = true;
+  globe.controls().autoRotateSpeed = 0.5;
+  globe.controls().enableZoom = true;
+  globe.controls().minDistance = 150;
+  globe.controls().maxDistance = 500;
+
+  // Add rings for active locations
+  globe
+    .ringsData([])
+    .ringLat('lat')
+    .ringLng('lng')
+    .ringAltitude(0.01)
+    .ringColor(() => t => `rgba(0,229,160,${1-t})`)
+    .ringMaxRadius(3)
+    .ringPropagationSpeed(2)
+    .ringRepeatPeriod(1500);
+
+function switchGlobeTheme(theme) {
+  const container = document.getElementById('globeContainer');
+  if (!container) return;
+  // Properly dispose old globe's Three.js renderer
+  if (globe) {
+    try {
+      const renderer = globe.renderer();
+      if (renderer) { renderer.dispose(); renderer.forceContextLoss(); }
+    } catch(e) {}
+  }
+  // Remove all children except legend
+  Array.from(container.children).forEach(child => {
+    if (!child.classList.contains('globe-legend')) child.remove();
+  });
+  globe = null;
+  
+  const cb = '?v=' + Date.now();
+  const themes = {
+    night: { img: '//unpkg.com/three-globe/example/img/earth-dark.jpg' + cb, bump: '//unpkg.com/three-globe/example/img/earth-topology.png' + cb, bg: '//unpkg.com/three-globe/example/img/night-sky.png', atmo: '#00b4d8', atmoAlt: 0.15 },
+    holographic: { img: '//unpkg.com/three-globe/example/img/earth-water.png' + cb, bump: '', bg: '//unpkg.com/three-globe/example/img/night-sky.png', atmo: '#00e5ff', atmoAlt: 0.25 },
+    blue: { img: '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg' + cb, bump: '//unpkg.com/three-globe/example/img/earth-topology.png' + cb, bg: '//unpkg.com/three-globe/example/img/night-sky.png', atmo: '#4fc3f7', atmoAlt: 0.2 },
+    topology: { img: '//unpkg.com/three-globe/example/img/earth-topology.png' + cb, bump: '', bg: '//unpkg.com/three-globe/example/img/night-sky.png', atmo: '#00b4d8', atmoAlt: 0.12 },
+    dark: { img: '//unpkg.com/three-globe/example/img/earth-night.jpg' + cb, bump: '//unpkg.com/three-globe/example/img/earth-topology.png' + cb, bg: '//unpkg.com/three-globe/example/img/night-sky.png', atmo: '#6366f1', atmoAlt: 0.18 }
+  };
+  const t = themes[theme] || themes.night;
+  
+  globe = Globe()
+    .globeImageUrl(t.img)
+    .bumpImageUrl(t.bump || '')
+    .backgroundImageUrl(t.bg)
+    .atmosphereColor(t.atmo)
+    .atmosphereAltitude(t.atmoAlt)
+    .pointsData([])
+    .pointLat('lat').pointLng('lng')
+    .pointAltitude(d => d.active > 0 ? 0.06 : 0.02)
+    .pointRadius(d => Math.min(0.8, 0.2 + d.count * 0.05))
+    .pointColor(d => d.active > 0 ? '#00e5a0' : '#00b4d8')
+    .pointLabel(d => `<div style="background:rgba(10,22,40,.92);border:1px solid rgba(0,180,216,.3);border-radius:8px;padding:8px 12px;font-family:Inter,sans-serif;font-size:12px;color:#e2e8f0;min-width:120px">
+      <div style="font-weight:700;margin-bottom:3px">${d.city}, ${d.country}</div>
+      <div>${d.count} session${d.count>1?'s':''}</div>
+      ${d.active>0?'<div style="color:#00e5a0;font-weight:600;margin-top:2px">● '+d.active+' live now</div>':''}
+    </div>`)
+    .pointsMerge(false)
+    .ringsData([]).ringLat('lat').ringLng('lng').ringAltitude(0.01)
+    .ringColor(() => t2 => `rgba(0,229,160,${1-t2})`)
+    .ringMaxRadius(3).ringPropagationSpeed(2).ringRepeatPeriod(1500)
+    .width(container.clientWidth)
+    .height(420)
+    (container);
+  
+  globe.controls().autoRotate = true;
+  globe.controls().autoRotateSpeed = 0.5;
+  globe.controls().enableZoom = true;
+  globe.controls().minDistance = 150;
+  globe.controls().maxDistance = 500;
+  refreshGlobe();
+}
+  
+  // Load data
+  await refreshGlobe();
+  
+  // Handle resize
+  window.addEventListener('resize', () => {
+    if (globe && container) globe.width(container.clientWidth);
+  });
+}
+
+async function refreshGlobe() {
+  if (!globe) return;
+  try {
+    const r = await fetch(API + '/globe');
+    const d = await r.json();
+    globe.pointsData(d.locations);
+    // Set rings only for active locations
+    globe.ringsData(d.locations.filter(l => l.active > 0));
+  } catch(e) { console.error('Globe error:', e); }
+}
+
+// Init globe after a short delay to let the page render
+setTimeout(initGlobe, 500);
+// Refresh globe data every 15 seconds
+setInterval(refreshGlobe, 15000);
+
+// ── Settings: Payment Gateway Toggle ──
+async function loadGatewayState() {
+  try {
+    const r = await fetch(API + '/settings');
+    const d = await r.json();
+    const isWhop = d.payment_gateway === 'whop';
+    document.getElementById('gatewayToggle').checked = isWhop;
+    updateGatewayUI(isWhop);
+  } catch(e) { console.error('Failed to load settings:', e); }
+}
+
+function updateGatewayUI(isWhop) {
+  const knob = document.getElementById('toggleKnob');
+  const slider = knob.previousElementSibling;
+  const stripeLabel = document.getElementById('gwLabelStripe');
+  const whopLabel = document.getElementById('gwLabelWhop');
+  if (isWhop) {
+    knob.style.left = '29px';
+    slider.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)';
+    stripeLabel.style.color = 'var(--text2)';
+    whopLabel.style.color = '#a78bfa';
+  } else {
+    knob.style.left = '3px';
+    slider.style.background = '#2f3b52';
+    stripeLabel.style.color = 'var(--accent)';
+    whopLabel.style.color = 'var(--text2)';
+  }
+}
+
+async function toggleGateway() {
+  const isWhop = document.getElementById('gatewayToggle').checked;
+  const gateway = isWhop ? 'whop' : 'stripe';
+  updateGatewayUI(isWhop);
+  const status = document.getElementById('gwStatus');
+  status.style.display = 'block';
+  status.style.background = 'rgba(245,158,11,.1)';
+  status.style.color = '#f59e0b';
+  status.textContent = 'Switching to ' + (isWhop ? 'Whop' : 'Stripe') + '...';
+  try {
+    const r = await fetch(API + '/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_gateway: gateway })
+    });
+    if (!r.ok) throw new Error('Failed');
+    status.style.background = 'rgba(34,197,94,.1)';
+    status.style.color = '#22c55e';
+    status.textContent = '✓ Checkout is now using ' + (isWhop ? 'Whop (subscriptions)' : 'Stripe (one-time)') + '. Live for all new visitors.';
+    setTimeout(() => { status.style.display = 'none'; }, 4000);
+  } catch(e) {
+    status.style.background = 'rgba(239,68,68,.1)';
+    status.style.color = '#ef4444';
+    status.textContent = '✕ Failed to update. Try again.';
+    document.getElementById('gatewayToggle').checked = !isWhop;
+    updateGatewayUI(!isWhop);
+  }
+}
+</script>
+</body>
+</html>
